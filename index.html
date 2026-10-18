@@ -284,13 +284,13 @@ function renderSubject(s){
   ${s.note?`<div class="sub">${esc(s.note)}</div>`:''}
   <div class="card" style="margin-top:12px"><div class="bar"><i style="width:${p}%;background:${s.color}"></i></div>
     <span class="sub">${p}% estudado · ${revs(s)} de ${s.topics.length} temas revisados</span></div>
-  <h2>Materiais da matéria</h2>
-  <div class="card" style="padding-top:6px">${chips(s,'subject',s.id)}<div class="sub" style="margin-top:8px">Cole o link do seu Drive ou iCloud. O link fica salvo só neste aparelho.</div></div>
   <h2>Temas e artigos</h2>
   ${s.legend?`<div class="sub" style="margin:-4px 0 8px">${esc(s.legend)}</div>`:''}
   <div class="sub" style="margin-bottom:8px">Marque Estudei ao terminar o tema pela primeira vez e Revisei na revisão, de preferência com questões da FGV. Confira no edital se houve alteração recente nas leis.</div>
   <div class="card">${s.topics.length?s.topics.map(topicRow).join(''):'<div class="empty">Nada por aqui ainda.</div>'}
     <form data-f="addTopic"><input type="text" name="v" placeholder="Novo tema" required><button class="btn">Adicionar</button></form></div>
+  <h2>Materiais da matéria</h2>
+  <div class="card" style="padding-top:6px">${chips(s,'subject',s.id)}<div class="sub" style="margin-top:8px">Cole o link do seu Drive ou iCloud. O link fica salvo só neste aparelho.</div></div>
   <h2>Videoaulas</h2>
   <div class="card">${s.videos.length?s.videos.map(videoRow).join(''):'<div class="empty">Nada por aqui ainda.</div>'}
     <form data-f="addVideo"><input type="text" name="t" placeholder="Título da aula" required><input type="url" name="u" placeholder="Link (opcional)"><button class="btn">Adicionar</button></form></div>
@@ -365,4 +365,5 @@ render();
 </script>
 </body>
 </html>
+
 
