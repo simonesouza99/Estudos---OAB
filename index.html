@@ -29,9 +29,16 @@ h2{font-size:18px;margin:26px 0 10px}
 .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 6px}
 .bar i{display:block;height:100%;border-radius:99px;transition:width .3s}
 .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}
+.row:last-child,.trow:last-child{border-bottom:0}
 .row .t{flex:1;min-width:0;word-break:break-word}
 .row.done .t{text-decoration:line-through;color:var(--muted)}
+.trow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.trow .t{flex:1 1 210px;min-width:0;word-break:break-word}
+.trow .dn{color:var(--muted)}
+.ref{font-size:13px;color:var(--muted);margin-top:2px}
+.pill{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:99px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer}
+.pill.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.pill.on.rv{background:var(--accent2);border-color:var(--accent2)}
 .chk{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);background:transparent;flex:none;cursor:pointer;color:#fff;font-size:18px;line-height:1;padding:0}
 .chk.on{background:var(--ok);border-color:var(--ok)}
 .x{background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer;padding:6px}
@@ -55,6 +62,103 @@ const KEY='oab-estudos-v1';
 const START=new Date(2026,9,5); // 5 de outubro de 2026 (início do cronograma de 90 dias)
 const COLORS=['#e11d48','#7c3aed','#2563eb','#0891b2','#059669','#65a30d','#d97706','#ea580c','#db2777','#4f46e5'];
 const DEFAULT=['Ética','Penal','Processo Penal','Civil','Processo Civil','Trabalho','Processo do Trabalho','Administrativo','Constitucional','Tributário'];
+
+// Checklist OAB 1ª fase (FGV): temas de maior incidência e artigos. l = legenda de siglas, n = observação.
+const SEED={
+'Ética':{l:'EOAB = Lei 8.906/94 | CED = Código de Ética',t:[
+['Atividades privativas e inscrição','EOAB arts. 1º, 3º, 8º, 9º'],
+['Direitos e prerrogativas','EOAB arts. 6º e 7º'],
+['Sociedade de advogados','EOAB arts. 15 a 17'],
+['Honorários','EOAB arts. 22 a 26; CED arts. 48 a 54'],
+['Incompatibilidades e impedimentos','EOAB arts. 27 a 30'],
+['Infrações, sanções e prescrição','EOAB arts. 34 a 43'],
+['Órgãos e eleições da OAB','EOAB arts. 44 a 67'],
+['Processo disciplinar e recursos','EOAB arts. 68 a 77'],
+['Sigilo e publicidade','CED arts. 35 a 47']]},
+'Penal':{l:'CP = Código Penal',t:[
+['Teoria do crime','CP arts. 13 a 25'],
+['Concurso de pessoas','CP arts. 29 a 31'],
+['Penas e sua aplicação','CP arts. 32 a 76'],
+['Extinção da punibilidade e prescrição','CP arts. 107 a 120'],
+['Crimes contra a pessoa e o patrimônio','CP arts. 121 a 183'],
+['Crimes contra a administração pública','CP arts. 312 a 359-H'],
+['Leis especiais','Leis 8.072/90, 11.343/06, 11.340/06 e 9.099/95']]},
+'Processo Penal':{l:'CPP = Código de Processo Penal',t:[
+['Inquérito e ação penal','CPP arts. 4º a 62'],
+['Competência','CPP arts. 69 a 91'],
+['Provas','CPP arts. 155 a 250'],
+['Prisões e medidas cautelares','CPP arts. 282 a 318'],
+['Nulidades','CPP arts. 563 a 573'],
+['Tribunal do Júri','CPP arts. 406 a 497'],
+['Recursos','CPP arts. 574 a 667']]},
+'Civil':{l:'CC = Código Civil | CDC = Lei 8.078/90',t:[
+['Pessoas e personalidade','CC arts. 1º a 21'],
+['Negócio jurídico e defeitos','CC arts. 104 a 184'],
+['Prescrição e decadência','CC arts. 189 a 211'],
+['Obrigações','CC arts. 233 a 420'],
+['Contratos','CC arts. 421 a 480'],
+['Responsabilidade civil','CC arts. 186, 187 e 927 a 954'],
+['Posse, propriedade e usucapião','CC arts. 1.196 a 1.276'],
+['Família e sucessões','CC arts. 1.511 a 2.027'],
+['Código de Defesa do Consumidor','CDC arts. 6º, 12 a 14, 18 a 20, 26, 27, 39, 42 e 51']]},
+'Processo Civil':{l:'CPC/2015 (Lei 13.105/15)',t:[
+['Normas fundamentais','CPC arts. 1º a 12'],
+['Competência','CPC arts. 42 a 66'],
+['Litisconsórcio e intervenção de terceiros','CPC arts. 113 a 138'],
+['Prazos e atos processuais','CPC arts. 218 a 235'],
+['Tutela provisória','CPC arts. 294 a 311'],
+['Petição inicial e resposta do réu','CPC arts. 319 a 346'],
+['Provas','CPC arts. 369 a 484'],
+['Sentença e coisa julgada','CPC arts. 485 a 508'],
+['Cumprimento de sentença e execução','CPC arts. 513 a 538 e 771 a 925'],
+['Recursos','CPC arts. 994 a 1.044']]},
+'Trabalho':{l:'CLT = Consolidação das Leis do Trabalho',t:[
+['Relação de emprego','CLT arts. 2º e 3º'],
+['Jornada, horas extras e intervalos','CLT arts. 58 a 75'],
+['Férias','CLT arts. 129 a 153'],
+['Remuneração','CLT arts. 457 e 458'],
+['Rescisão, aviso prévio e justa causa','CLT arts. 477 a 491 (justa causa: art. 482)'],
+['Negociação coletiva','CLT arts. 611-A e 611-B'],
+['Terceirização','Lei 6.019/74'],
+['Prescrição','CF art. 7º, XXIX; CLT art. 11']]},
+'Processo do Trabalho':{l:'CLT e CF',t:[
+['Competência da Justiça do Trabalho','CF art. 114'],
+['Honorários e custas','CLT arts. 789 a 791-A'],
+['Reclamação e audiência','CLT arts. 840 a 855'],
+['Execução','CLT arts. 876 a 892'],
+['Recursos','CLT arts. 893 a 902']]},
+'Administrativo':{n:'Matéria com mais peso entre as de maior incidência',t:[
+['Princípios','CF art. 37; Lei 9.784/99 art. 2º'],
+['Organização administrativa','DL 200/67 arts. 4º e 5º'],
+['Poderes administrativos','CTN art. 78; CF art. 84, IV'],
+['Atos administrativos','Lei 4.717/65 art. 2º; Súmulas 346 e 473 do STF'],
+['Processo administrativo','Lei 9.784/99 (decadência: art. 54)'],
+['Responsabilidade civil do Estado','CF art. 37, § 6º'],
+['Servidores públicos','CF arts. 37 e 39 a 41; Lei 8.112/90 arts. 116, 117, 127 e 143 a 182'],
+['Licitações e contratos','Lei 14.133/21 arts. 28, 74, 75, 124, 125 e 155 a 163'],
+['Improbidade administrativa','Lei 8.429/92 arts. 9º a 12, 17 e 23 (com a Lei 14.230/21)'],
+['Intervenção na propriedade','CF art. 5º, XXIV e XXV; DL 3.365/41; DL 25/37'],
+['Concessões e PPP','Leis 8.987/95 e 11.079/04'],
+['Controle da administração','CF arts. 70 a 75; Lei 12.016/09']]},
+'Constitucional':{l:'CF = Constituição Federal de 1988',t:[
+['Direitos e remédios constitucionais','CF art. 5º'],
+['Nacionalidade e direitos políticos','CF arts. 12 a 16'],
+['Organização do Estado e competências','CF arts. 18 a 43'],
+['Imunidades e processo legislativo','CF arts. 53 e 59 a 69'],
+['Emendas constitucionais','CF art. 60'],
+['Poder Judiciário e STF','CF arts. 92 a 126'],
+['Controle de constitucionalidade','CF arts. 102, 103 e 125 § 2º; Leis 9.868/99 e 9.882/99']]},
+'Tributário':{l:'CTN = Código Tributário Nacional (Lei 5.172/66)',t:[
+['Competência e limitações ao poder de tributar','CF arts. 145 a 152; CTN arts. 3º e 97'],
+['Obrigação e fato gerador','CTN arts. 113 a 118'],
+['Sujeição passiva e responsabilidade','CTN arts. 121 a 138'],
+['Lançamento','CTN arts. 142 a 150'],
+['Suspensão e extinção do crédito','CTN arts. 151 a 174 (decadência: art. 173; prescrição: art. 174)'],
+['Repetição de indébito','CTN arts. 165 a 169'],
+['Impostos em espécie e repartição de receitas','CF arts. 153, 155, 156 e 157 a 162'],
+['Execução fiscal','Lei 6.830/80']]}
+};
+
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -65,8 +169,26 @@ function load(){
 let state=load(), view='home';
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 
+// Carrega o checklist do PDF uma única vez por matéria, sem apagar nada que você já marcou ou criou.
+function seedMerge(){
+  state.subjects.forEach(s=>{
+    const d=SEED[s.name];if(!d||s.seeded)return;
+    d.t.forEach(([title,ref])=>{
+      const ex=s.topics.find(x=>x.title===title);
+      if(ex){if(!ex.ref)ex.ref=ref}
+      else s.topics.push({id:uid(),title,ref,done:false,rev:false});
+    });
+    if(d.l)s.legend=d.l;
+    if(d.n)s.note=d.n;
+    s.seeded=1;
+  });
+  save();
+}
+seedMerge();
+
 const items=s=>[...s.topics,...s.videos];
 const pct=a=>a.length?Math.round(a.filter(x=>x.done).length/a.length*100):0;
+const revs=s=>s.topics.filter(x=>x.rev).length;
 const find=id=>state.subjects.find(s=>s.id===id);
 
 function dayInfo(){
@@ -87,37 +209,52 @@ function ring(p){
 
 function renderHome(){
   const all=state.subjects.flatMap(items), done=all.filter(x=>x.done).length;
+  const rv=state.subjects.reduce((n,s)=>n+revs(s),0);
   const cards=state.subjects.map(s=>{
     const a=items(s),p=pct(a);
     return `<div class="card subj" data-a="open" data-id="${s.id}">
       <b><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</b>
       <div class="bar"><i style="width:${p}%;background:${s.color}"></i></div>
-      <span class="sub">${p}% · ${a.filter(x=>x.done).length}/${a.length} itens · ${s.videos.length} videoaula(s)</span></div>`;
+      <span class="sub">${p}% · ${a.filter(x=>x.done).length}/${a.length} estudados · ${revs(s)} revisados</span></div>`;
   }).join('');
   return `<h1>Estudos OAB</h1><div class="sub">${dayInfo()}</div>
   <div class="card hero" style="margin-top:16px">${ring(pct(all))}
-    <div><b style="font-size:18px">Aproveitamento geral</b><div class="sub">${done} de ${all.length} itens concluídos</div></div></div>
+    <div><b style="font-size:18px">Aproveitamento geral</b><div class="sub">${done} de ${all.length} itens estudados</div><div class="sub">${rv} temas revisados</div></div></div>
   <h2>Matérias</h2><div class="grid">${cards||'<div class="empty">Nenhuma matéria ainda.</div>'}</div>
   <form data-f="addSubject"><input type="text" name="v" placeholder="Nova matéria" required><button class="btn">Adicionar matéria</button></form>
   <div class="tools"><button class="btn ghost" data-a="export">Salvar backup</button><button class="btn ghost" data-a="import">Restaurar backup</button></div>
   <p class="sub">Seus dados ficam salvos neste aparelho. Use o backup para levar para outro.</p>`;
 }
 
-function renderSubject(s){
-  const p=pct(items(s));
-  const rows=(list,kind)=>list.length?list.map(x=>`<div class="row ${x.done?'done':''}">
-    <button class="chk ${x.done?'on':''}" data-a="toggle" data-k="${kind}" data-id="${x.id}">${x.done?'✓':''}</button>
+function topicRow(x){
+  return `<div class="trow">
+    <div class="t"><div class="${x.done?'dn':''}">${esc(x.title)}</div>${x.ref?`<div class="ref">${esc(x.ref)}</div>`:''}</div>
+    <button class="pill ${x.done?'on':''}" data-a="toggle" data-k="topics" data-f="done" data-id="${x.id}">Estudei</button>
+    <button class="pill ${x.rev?'on rv':''}" data-a="toggle" data-k="topics" data-f="rev" data-id="${x.id}">Revisei</button>
+    <button class="x" data-a="del" data-k="topics" data-id="${x.id}" aria-label="Excluir">✕</button></div>`;
+}
+function videoRow(x){
+  return `<div class="row ${x.done?'done':''}">
+    <button class="chk ${x.done?'on':''}" data-a="toggle" data-k="videos" data-f="done" data-id="${x.id}">${x.done?'✓':''}</button>
     <div class="t">${esc(x.title)}</div>
     ${x.url?`<a class="play" href="${esc(x.url)}" target="_blank" rel="noopener">▶ Abrir</a>`:''}
-    <button class="x" data-a="del" data-k="${kind}" data-id="${x.id}" aria-label="Excluir">✕</button></div>`).join(''):'<div class="empty">Nada por aqui ainda.</div>';
+    <button class="x" data-a="del" data-k="videos" data-id="${x.id}" aria-label="Excluir">✕</button></div>`;
+}
+
+function renderSubject(s){
+  const a=items(s),p=pct(a);
   return `<button class="back" data-a="home">‹ Voltar</button>
   <h1><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</h1>
-  <div class="card"><div class="bar"><i style="width:${p}%;background:${s.color}"></i></div><span class="sub">${p}% concluído</span></div>
-  <h2>Checklist de tópicos</h2>
-  <div class="card">${rows(s.topics,'topics')}
-    <form data-f="addTopic"><input type="text" name="v" placeholder="Ex.: Princípios da Administração" required><button class="btn">Adicionar</button></form></div>
+  ${s.note?`<div class="sub">${esc(s.note)}</div>`:''}
+  <div class="card" style="margin-top:12px"><div class="bar"><i style="width:${p}%;background:${s.color}"></i></div>
+    <span class="sub">${p}% estudado · ${revs(s)} de ${s.topics.length} temas revisados</span></div>
+  <h2>Temas e artigos</h2>
+  ${s.legend?`<div class="sub" style="margin:-4px 0 8px">${esc(s.legend)}</div>`:''}
+  <div class="sub" style="margin-bottom:8px">Marque Estudei ao terminar o tema pela primeira vez e Revisei na revisão, de preferência com questões da FGV. Confira no edital se houve alteração recente nas leis.</div>
+  <div class="card">${s.topics.length?s.topics.map(topicRow).join(''):'<div class="empty">Nada por aqui ainda.</div>'}
+    <form data-f="addTopic"><input type="text" name="v" placeholder="Novo tema" required><button class="btn">Adicionar</button></form></div>
   <h2>Videoaulas</h2>
-  <div class="card">${rows(s.videos,'videos')}
+  <div class="card">${s.videos.length?s.videos.map(videoRow).join(''):'<div class="empty">Nada por aqui ainda.</div>'}
     <form data-f="addVideo"><input type="text" name="t" placeholder="Título da aula" required><input type="url" name="u" placeholder="Link (opcional)"><button class="btn">Adicionar</button></form></div>
   <div class="tools"><button class="btn danger" data-a="delSubject">Excluir matéria</button></div>`;
 }
@@ -136,7 +273,7 @@ document.addEventListener('click',e=>{
   const a=b.dataset.a,s=find(view),id=b.dataset.id,k=b.dataset.k;
   if(a==='open'){view=id;render();return}
   if(a==='home'){view='home';render();return}
-  if(a==='toggle'&&s){const it=s[k].find(x=>x.id===id);if(it){it.done=!it.done;save();rerender()}return}
+  if(a==='toggle'&&s){const it=s[k].find(x=>x.id===id),f=b.dataset.f||'done';if(it){it[f]=!it[f];save();rerender()}return}
   if(a==='del'&&s){s[k]=s[k].filter(x=>x.id!==id);save();rerender();return}
   if(a==='delSubject'&&s){if(confirm('Excluir "'+s.name+'" e tudo dentro dela?')){state.subjects=state.subjects.filter(x=>x.id!==s.id);save();view='home';render()}return}
   if(a==='export'){
@@ -151,10 +288,10 @@ document.addEventListener('submit',e=>{
   const d=new FormData(f),s=find(view),kind=f.dataset.f;
   if(kind==='addSubject'){
     const n=(d.get('v')||'').trim();if(!n)return;
-    state.subjects.push({id:uid(),name:n,color:COLORS[state.subjects.length%COLORS.length],topics:[],videos:[]});
+    state.subjects.push({id:uid(),name:n,color:COLORS[state.subjects.length%COLORS.length],topics:[],videos:[],seeded:1});
   }else if(kind==='addTopic'&&s){
     const n=(d.get('v')||'').trim();if(!n)return;
-    s.topics.push({id:uid(),title:n,done:false});
+    s.topics.push({id:uid(),title:n,ref:'',done:false,rev:false});
   }else if(kind==='addVideo'&&s){
     const t=(d.get('t')||'').trim();if(!t)return;
     let u=(d.get('u')||'').trim();
@@ -171,7 +308,7 @@ document.getElementById('imp').addEventListener('change',e=>{
     try{
       const s=JSON.parse(r.result);
       if(!s||!Array.isArray(s.subjects))throw 0;
-      if(confirm('Substituir os dados atuais pelo backup?')){state=s;save();view='home';render()}
+      if(confirm('Substituir os dados atuais pelo backup?')){state=s;seedMerge();view='home';render()}
     }catch(_){alert('Arquivo de backup inválido.')}
   };
   r.readAsText(file);e.target.value='';
