@@ -28,9 +28,19 @@ h2{font-size:18px;margin:26px 0 10px}
 .subj b{display:block;font-size:17px}
 .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 6px}
 .bar i{display:block;height:100%;border-radius:99px;transition:width .3s}
-.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-.row:last-child,.trow:last-child{border-bottom:0}
-.row .t{flex:1;min-width:0;word-break:break-word}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child,.trow:last-child,.vwrap:last-child{border-bottom:0}
+.vwrap{border-bottom:1px solid var(--line)}
+.vwrap .row{border-bottom:0}
+.row .t{flex:1 1 150px;min-width:0;word-break:break-word}
+.vp{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin:0 0 12px;background:#000}
+button.play{background:transparent;border:1px solid var(--line);border-radius:99px;padding:7px 12px;color:var(--accent2);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.play.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:99px;font-size:13px;font-weight:600;color:var(--muted);background:transparent;padding:0}
+button.chip{padding:6px 12px;cursor:pointer}
+.chip a{color:var(--accent2);text-decoration:none;padding:6px 4px 6px 12px}
+.chip .ed{background:none;border:0;color:var(--muted);font-size:14px;padding:6px 10px 6px 4px;cursor:pointer}
 .row.done .t{text-decoration:line-through;color:var(--muted)}
 .trow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
 .trow .t{flex:1 1 210px;min-width:0;word-break:break-word}
@@ -191,6 +201,28 @@ const pct=a=>a.length?Math.round(a.filter(x=>x.done).length/a.length*100):0;
 const revs=s=>s.topics.filter(x=>x.rev).length;
 const find=id=>state.subjects.find(s=>s.id===id);
 
+let openVid=null;
+const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'';
+function ytId(u){
+  try{
+    const x=new URL(u),h=x.hostname.replace(/^www\.|^m\./,'');let id='';
+    if(h==='youtu.be')id=x.pathname.slice(1).split('/')[0];
+    else if(h==='youtube.com'||h==='music.youtube.com'){
+      if(x.pathname==='/watch')id=x.searchParams.get('v')||'';
+      else{const m=x.pathname.match(/^\/(?:embed|shorts|live)\/([\w-]+)/);if(m)id=m[1]}
+    }
+    return /^[\w-]{6,15}$/.test(id)?id:'';
+  }catch(e){return ''}
+}
+const LABEL={cl:'Caderno legislativo',mm:'Mapa mental'};
+function chips(o,k,id){
+  return '<div class="chips">'+['cl','mm'].map(f=>{
+    const u=safeUrl(o[f]);
+    return u?`<span class="chip"><a href="${esc(u)}" target="_blank" rel="noopener">${LABEL[f]} ↗</a><button class="ed" data-a="setlink" data-k="${k}" data-f="${f}" data-id="${id}" aria-label="Editar link">✎</button></span>`
+            :`<button class="chip" data-a="setlink" data-k="${k}" data-f="${f}" data-id="${id}">+ ${LABEL[f]}</button>`;
+  }).join('')+'</div>';
+}
+
 function dayInfo(){
   const t=new Date();const today=new Date(t.getFullYear(),t.getMonth(),t.getDate());
   const d=Math.round((today-START)/86400000)+1;
@@ -228,17 +260,21 @@ function renderHome(){
 
 function topicRow(x){
   return `<div class="trow">
-    <div class="t"><div class="${x.done?'dn':''}">${esc(x.title)}</div>${x.ref?`<div class="ref">${esc(x.ref)}</div>`:''}</div>
+    <div class="t"><div class="${x.done?'dn':''}">${esc(x.title)}</div>${x.ref?`<div class="ref">${esc(x.ref)}</div>`:''}${chips(x,'topic',x.id)}</div>
     <button class="pill ${x.done?'on':''}" data-a="toggle" data-k="topics" data-f="done" data-id="${x.id}">Estudei</button>
     <button class="pill ${x.rev?'on rv':''}" data-a="toggle" data-k="topics" data-f="rev" data-id="${x.id}">Revisei</button>
     <button class="x" data-a="del" data-k="topics" data-id="${x.id}" aria-label="Excluir">✕</button></div>`;
 }
 function videoRow(x){
-  return `<div class="row ${x.done?'done':''}">
+  const u=safeUrl(x.url),yt=u?ytId(u):'',open=yt&&openVid===x.id;
+  const act=!u?'':yt
+    ?`<button class="play ${open?'on':''}" data-a="play" data-id="${x.id}">${open?'Fechar vídeo':'▶ Assistir aqui'}</button><a class="play" href="${esc(u)}" target="_blank" rel="noopener">YouTube ↗</a>`
+    :`<a class="play" href="${esc(u)}" target="_blank" rel="noopener">▶ Abrir</a>`;
+  return `<div class="vwrap"><div class="row ${x.done?'done':''}">
     <button class="chk ${x.done?'on':''}" data-a="toggle" data-k="videos" data-f="done" data-id="${x.id}">${x.done?'✓':''}</button>
-    <div class="t">${esc(x.title)}</div>
-    ${x.url?`<a class="play" href="${esc(x.url)}" target="_blank" rel="noopener">▶ Abrir</a>`:''}
-    <button class="x" data-a="del" data-k="videos" data-id="${x.id}" aria-label="Excluir">✕</button></div>`;
+    <div class="t">${esc(x.title)}</div>${act}
+    <button class="x" data-a="del" data-k="videos" data-id="${x.id}" aria-label="Excluir">✕</button></div>
+    ${open?`<iframe class="vp" src="https://www.youtube-nocookie.com/embed/${yt}" title="Videoaula" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`:''}</div>`;
 }
 
 function renderSubject(s){
@@ -248,6 +284,8 @@ function renderSubject(s){
   ${s.note?`<div class="sub">${esc(s.note)}</div>`:''}
   <div class="card" style="margin-top:12px"><div class="bar"><i style="width:${p}%;background:${s.color}"></i></div>
     <span class="sub">${p}% estudado · ${revs(s)} de ${s.topics.length} temas revisados</span></div>
+  <h2>Materiais da matéria</h2>
+  <div class="card" style="padding-top:6px">${chips(s,'subject',s.id)}<div class="sub" style="margin-top:8px">Cole o link do seu Drive ou iCloud. O link fica salvo só neste aparelho.</div></div>
   <h2>Temas e artigos</h2>
   ${s.legend?`<div class="sub" style="margin:-4px 0 8px">${esc(s.legend)}</div>`:''}
   <div class="sub" style="margin-bottom:8px">Marque Estudei ao terminar o tema pela primeira vez e Revisei na revisão, de preferência com questões da FGV. Confira no edital se houve alteração recente nas leis.</div>
@@ -271,8 +309,17 @@ function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,s=find(view),id=b.dataset.id,k=b.dataset.k;
-  if(a==='open'){view=id;render();return}
-  if(a==='home'){view='home';render();return}
+  if(a==='open'){view=id;openVid=null;render();return}
+  if(a==='home'){view='home';openVid=null;render();return}
+  if(a==='play'){openVid=openVid===id?null:id;rerender();return}
+  if(a==='setlink'&&s){
+    const o=k==='subject'?s:s.topics.find(x=>x.id===id);if(!o)return;
+    const f=b.dataset.f;
+    let u=prompt('Cole o link do '+LABEL[f].toLowerCase()+' (deixe vazio para remover)',o[f]||'');
+    if(u===null)return;u=u.trim();
+    if(u&&!/^https?:\/\//i.test(u))u='https://'+u;
+    if(u)o[f]=u;else delete o[f];
+    save();rerender();return}
   if(a==='toggle'&&s){const it=s[k].find(x=>x.id===id),f=b.dataset.f||'done';if(it){it[f]=!it[f];save();rerender()}return}
   if(a==='del'&&s){s[k]=s[k].filter(x=>x.id!==id);save();rerender();return}
   if(a==='delSubject'&&s){if(confirm('Excluir "'+s.name+'" e tudo dentro dela?')){state.subjects=state.subjects.filter(x=>x.id!==s.id);save();view='home';render()}return}
@@ -318,3 +365,4 @@ render();
 </script>
 </body>
 </html>
+
