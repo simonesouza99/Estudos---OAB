@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Estudos OAB">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1e3a5f">
+<link rel="manifest" href="manifest.json">
+<title>Estudos OAB</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--text:#162033;--muted:#6b7689;--line:#e3e8f0;--accent:#1e3a5f;--accent2:#2f6fdb;--ok:#16a34a}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1420;--card:#18202f;--text:#e8edf6;--muted:#94a0b5;--line:#27324a;--accent:#8db4ff;--accent2:#5b93f5}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#app{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:26px;margin:8px 0 2px}
+h2{font-size:18px;margin:26px 0 10px}
+.sub{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.hero{display:flex;align-items:center;gap:20px}
+.ring{width:120px;height:120px;flex:none;position:relative}
+.ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.subj{cursor:pointer;margin:0}
+.subj b{display:block;font-size:17px}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .3s}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .t{flex:1;min-width:0;word-break:break-word}
+.row.done .t{text-decoration:line-through;color:var(--muted)}
+.chk{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);background:transparent;flex:none;cursor:pointer;color:#fff;font-size:18px;line-height:1;padding:0}
+.chk.on{background:var(--ok);border-color:var(--ok)}
+.x{background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer;padding:6px}
+.btn{background:var(--accent2);color:#fff;border:0;border-radius:12px;padding:11px 16px;font-size:15px;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent2);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:#dc2626;border:1px solid var(--line)}
+form{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+input[type=text],input[type=url]{flex:1;min-width:140px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px}
+a.play{color:var(--accent2);text-decoration:none;font-size:14px;white-space:nowrap}
+.back{background:none;border:0;color:var(--accent2);font-size:16px;padding:6px 0;cursor:pointer}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<input type="file" id="imp" accept="application/json" hidden>
+<script>
+const KEY='oab-estudos-v1';
+const START=new Date(2026,9,5); // 5 de outubro de 2026 (início do cronograma de 90 dias)
+const COLORS=['#e11d48','#7c3aed','#2563eb','#0891b2','#059669','#65a30d','#d97706','#ea580c','#db2777','#4f46e5'];
+const DEFAULT=['Ética','Penal','Processo Penal','Civil','Processo Civil','Trabalho','Processo do Trabalho','Administrativo','Constitucional','Tributário'];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.subjects))return s}catch(e){}
+  return {subjects:DEFAULT.map((n,i)=>({id:uid(),name:n,color:COLORS[i%COLORS.length],topics:[],videos:[]}))};
+}
+let state=load(), view='home';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+
+const items=s=>[...s.topics,...s.videos];
+const pct=a=>a.length?Math.round(a.filter(x=>x.done).length/a.length*100):0;
+const find=id=>state.subjects.find(s=>s.id===id);
+
+function dayInfo(){
+  const t=new Date();const today=new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  const d=Math.round((today-START)/86400000)+1;
+  if(d<1)return `Cronograma começa em ${1-d} dia(s)`;
+  if(d>90)return 'Cronograma de 90 dias concluído';
+  return `Dia ${d} de 90 do cronograma`;
+}
+
+function ring(p){
+  const r=52,c=2*Math.PI*r;
+  return `<div class="ring"><svg viewBox="0 0 120 120" width="120" height="120">
+  <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--line)" stroke-width="12"/>
+  <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--ok)" stroke-width="12" stroke-linecap="round"
+   stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 60 60)"/></svg><span>${p}%</span></div>`;
+}
+
+function renderHome(){
+  const all=state.subjects.flatMap(items), done=all.filter(x=>x.done).length;
+  const cards=state.subjects.map(s=>{
+    const a=items(s),p=pct(a);
+    return `<div class="card subj" data-a="open" data-id="${s.id}">
+      <b><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</b>
+      <div class="bar"><i style="width:${p}%;background:${s.color}"></i></div>
+      <span class="sub">${p}% · ${a.filter(x=>x.done).length}/${a.length} itens · ${s.videos.length} videoaula(s)</span></div>`;
+  }).join('');
+  return `<h1>Estudos OAB</h1><div class="sub">${dayInfo()}</div>
+  <div class="card hero" style="margin-top:16px">${ring(pct(all))}
+    <div><b style="font-size:18px">Aproveitamento geral</b><div class="sub">${done} de ${all.length} itens concluídos</div></div></div>
+  <h2>Matérias</h2><div class="grid">${cards||'<div class="empty">Nenhuma matéria ainda.</div>'}</div>
+  <form data-f="addSubject"><input type="text" name="v" placeholder="Nova matéria" required><button class="btn">Adicionar matéria</button></form>
+  <div class="tools"><button class="btn ghost" data-a="export">Salvar backup</button><button class="btn ghost" data-a="import">Restaurar backup</button></div>
+  <p class="sub">Seus dados ficam salvos neste aparelho. Use o backup para levar para outro.</p>`;
+}
+
+function renderSubject(s){
+  const p=pct(items(s));
+  const rows=(list,kind)=>list.length?list.map(x=>`<div class="row ${x.done?'done':''}">
+    <button class="chk ${x.done?'on':''}" data-a="toggle" data-k="${kind}" data-id="${x.id}">${x.done?'✓':''}</button>
+    <div class="t">${esc(x.title)}</div>
+    ${x.url?`<a class="play" href="${esc(x.url)}" target="_blank" rel="noopener">▶ Abrir</a>`:''}
+    <button class="x" data-a="del" data-k="${kind}" data-id="${x.id}" aria-label="Excluir">✕</button></div>`).join(''):'<div class="empty">Nada por aqui ainda.</div>';
+  return `<button class="back" data-a="home">‹ Voltar</button>
+  <h1><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</h1>
+  <div class="card"><div class="bar"><i style="width:${p}%;background:${s.color}"></i></div><span class="sub">${p}% concluído</span></div>
+  <h2>Checklist de tópicos</h2>
+  <div class="card">${rows(s.topics,'topics')}
+    <form data-f="addTopic"><input type="text" name="v" placeholder="Ex.: Princípios da Administração" required><button class="btn">Adicionar</button></form></div>
+  <h2>Videoaulas</h2>
+  <div class="card">${rows(s.videos,'videos')}
+    <form data-f="addVideo"><input type="text" name="t" placeholder="Título da aula" required><input type="url" name="u" placeholder="Link (opcional)"><button class="btn">Adicionar</button></form></div>
+  <div class="tools"><button class="btn danger" data-a="delSubject">Excluir matéria</button></div>`;
+}
+
+function render(){
+  const app=document.getElementById('app');
+  const s=view!=='home'?find(view):null;
+  if(view!=='home'&&!s)view='home';
+  app.innerHTML=s?renderSubject(s):renderHome();
+  window.scrollTo(0,0);
+}
+function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a,s=find(view),id=b.dataset.id,k=b.dataset.k;
+  if(a==='open'){view=id;render();return}
+  if(a==='home'){view='home';render();return}
+  if(a==='toggle'&&s){const it=s[k].find(x=>x.id===id);if(it){it.done=!it.done;save();rerender()}return}
+  if(a==='del'&&s){s[k]=s[k].filter(x=>x.id!==id);save();rerender();return}
+  if(a==='delSubject'&&s){if(confirm('Excluir "'+s.name+'" e tudo dentro dela?')){state.subjects=state.subjects.filter(x=>x.id!==s.id);save();view='home';render()}return}
+  if(a==='export'){
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const l=document.createElement('a');l.href=URL.createObjectURL(blob);
+    l.download='backup-estudos-oab-'+new Date().toISOString().slice(0,10)+'.json';l.click();return}
+  if(a==='import'){document.getElementById('imp').click()}
+});
+
+document.addEventListener('submit',e=>{
+  const f=e.target.closest('form[data-f]');if(!f)return;e.preventDefault();
+  const d=new FormData(f),s=find(view),kind=f.dataset.f;
+  if(kind==='addSubject'){
+    const n=(d.get('v')||'').trim();if(!n)return;
+    state.subjects.push({id:uid(),name:n,color:COLORS[state.subjects.length%COLORS.length],topics:[],videos:[]});
+  }else if(kind==='addTopic'&&s){
+    const n=(d.get('v')||'').trim();if(!n)return;
+    s.topics.push({id:uid(),title:n,done:false});
+  }else if(kind==='addVideo'&&s){
+    const t=(d.get('t')||'').trim();if(!t)return;
+    let u=(d.get('u')||'').trim();
+    if(u&&!/^https?:\/\//i.test(u))u='https://'+u;
+    s.videos.push({id:uid(),title:t,url:u,done:false});
+  }
+  save();rerender();
+});
+
+document.getElementById('imp').addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const s=JSON.parse(r.result);
+      if(!s||!Array.isArray(s.subjects))throw 0;
+      if(confirm('Substituir os dados atuais pelo backup?')){state=s;save();view='home';render()}
+    }catch(_){alert('Arquivo de backup inválido.')}
+  };
+  r.readAsText(file);e.target.value='';
+});
+
+render();
+</script>
+</body>
+</html>
