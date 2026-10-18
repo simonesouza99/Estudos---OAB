@@ -75,7 +75,7 @@ const DEFAULT=['Ética','Penal','Processo Penal','Civil','Processo Civil','Traba
 
 // Checklist OAB 1ª fase (FGV): temas de maior incidência e artigos. l = legenda de siglas, n = observação.
 const SEED={
-'Ética':{l:'EOAB = Lei 8.906/94 | CED = Código de Ética',t:[
+'Ética':{l:'EOAB = Lei 8.906/94 (Estatuto da Advocacia) | CED = Código de Ética e Disciplina (Resolução 02/2015 do Conselho Federal da OAB, não é lei)',t:[
 ['Atividades privativas e inscrição','EOAB arts. 1º, 3º, 8º, 9º'],
 ['Direitos e prerrogativas','EOAB arts. 6º e 7º'],
 ['Sociedade de advogados','EOAB arts. 15 a 17'],
@@ -182,14 +182,15 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 // Carrega o checklist do PDF uma única vez por matéria, sem apagar nada que você já marcou ou criou.
 function seedMerge(){
   state.subjects.forEach(s=>{
-    const d=SEED[s.name];if(!d||s.seeded)return;
+    const d=SEED[s.name];if(!d)return;
+    if(d.l)s.legend=d.l;
+    if(d.n)s.note=d.n;
+    if(s.seeded)return;
     d.t.forEach(([title,ref])=>{
       const ex=s.topics.find(x=>x.title===title);
       if(ex){if(!ex.ref)ex.ref=ref}
       else s.topics.push({id:uid(),title,ref,done:false,rev:false});
     });
-    if(d.l)s.legend=d.l;
-    if(d.n)s.note=d.n;
     s.seeded=1;
   });
   save();
@@ -214,9 +215,9 @@ function ytId(u){
     return /^[\w-]{6,15}$/.test(id)?id:'';
   }catch(e){return ''}
 }
-const LABEL={cl:'Caderno legislativo',mm:'Mapa mental'};
-function chips(o,k,id){
-  return '<div class="chips">'+['cl','mm'].map(f=>{
+const LABEL={cl:'Caderno legislativo',mm:'Mapa mental',sim:'Simulados'};
+function chips(o,k,id,fields=['cl','mm']){
+  return '<div class="chips">'+fields.map(f=>{
     const u=safeUrl(o[f]);
     return u?`<span class="chip"><a href="${esc(u)}" target="_blank" rel="noopener">${LABEL[f]} ↗</a><button class="ed" data-a="setlink" data-k="${k}" data-f="${f}" data-id="${id}" aria-label="Editar link">✎</button></span>`
             :`<button class="chip" data-a="setlink" data-k="${k}" data-f="${f}" data-id="${id}">+ ${LABEL[f]}</button>`;
@@ -290,7 +291,7 @@ function renderSubject(s){
   <div class="card">${s.topics.length?s.topics.map(topicRow).join(''):'<div class="empty">Nada por aqui ainda.</div>'}
     <form data-f="addTopic"><input type="text" name="v" placeholder="Novo tema" required><button class="btn">Adicionar</button></form></div>
   <h2>Materiais da matéria</h2>
-  <div class="card" style="padding-top:6px">${chips(s,'subject',s.id)}<div class="sub" style="margin-top:8px">Cole o link do seu Drive ou iCloud. O link fica salvo só neste aparelho.</div></div>
+  <div class="card" style="padding-top:6px">${chips(s,'subject',s.id,['cl','mm','sim'])}<div class="sub" style="margin-top:8px">Cole o link do seu Drive ou iCloud. O link fica salvo só neste aparelho.</div></div>
   <h2>Videoaulas</h2>
   <div class="card">${s.videos.length?s.videos.map(videoRow).join(''):'<div class="empty">Nada por aqui ainda.</div>'}
     <form data-f="addVideo"><input type="text" name="t" placeholder="Título da aula" required><input type="url" name="u" placeholder="Link (opcional)"><button class="btn">Adicionar</button></form></div>
@@ -365,5 +366,6 @@ render();
 </script>
 </body>
 </html>
+
 
 
